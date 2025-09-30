@@ -1,0 +1,59 @@
+# Data contents - not tracked in Git, but keep folder structure
+data/captured_images/*
+data/classification_results/*
+!data/captured_images/.gitkeep
+!data/classification_results/.gitkeep
+
+# Models - not tracked in Git  
+models/*.tflite
+models/*.h5
+models/*.pb
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+.env
+.ENV
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+
+# Cache
+.cache/

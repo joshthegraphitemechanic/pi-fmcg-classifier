@@ -1,0 +1,30 @@
+# Pi FMCG Classifier - Dependencies for Raspberry Pi
+# Install with: pip install -r requirements.txt
+
+# Core GUI and system
+# tkinter - Usually comes with Python, but listed for completeness
+
+# Computer vision and image processing
+opencv-python==4.8.1.*
+pillow>=10.0.0
+
+# Machine learning
+tensorflow-lite-runtime>=2.13.0
+numpy>=1.24.0
+
+# Hardware interfacing (Pi-specific)
+RPi.GPIO>=0.7.1
+gpiozero>=1.6.2
+
+# ADC for IR sensor (if using MCP3008)
+adafruit-circuitpython-mcp3xxx>=1.4.0
+adafruit-blinka>=8.0.0
+
+# Data handling
+pandas>=2.0.0
+
+# Pi Camera (if not using opencv)
+picamera2>=0.3.0
+
+# General utilities
+# pathlib, threading, datetime - Part of standard library

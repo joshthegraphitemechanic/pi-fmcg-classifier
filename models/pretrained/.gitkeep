@@ -1,0 +1,2 @@
+# Keep this directory in Git but ignore model files
+# Model files should be copied via USB to avoid large Git files
