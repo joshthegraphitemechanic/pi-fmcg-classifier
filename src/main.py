@@ -11,13 +11,18 @@ import threading
 import time
 from datetime import datetime
 import os
+import json
 from pathlib import Path
+from PIL import Image, ImageTk
 
 
 class FactoryLineGUI:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Factory Line Quality Control")
+
+        # Load configuration
+        self.load_config()
 
         # For development - windowed mode. Change to fullscreen for Pi deployment
         # self.root.geometry("900x700")
@@ -43,6 +48,35 @@ class FactoryLineGUI:
         )
         self.status_thread.start()
 
+    def load_config(self):
+        """Load configuration settings from config.json"""
+        try:
+            config_path = Path("../config.json")
+            with open(config_path, "r") as f:
+                self.config = json.load(f)
+            print(
+                f"Configuration loaded: {self.config['camera']['image_width']}x{self.config['camera']['image_height']} for Google Teachable Machine"
+            )
+        except FileNotFoundError:
+            print("Config file not found, using defaults")
+            # Default configuration for Google Teachable Machine
+            self.config = {
+                "camera": {
+                    "image_width": 224,
+                    "image_height": 224,
+                    "capture_format": "RGB",
+                    "quality": 95,
+                },
+                "collection": {"auto_capture_interval": 2.0, "images_per_session": 100},
+                "classification": {
+                    "model_path": "../models/pretrained/model.tflite",
+                    "confidence_threshold": 0.7,
+                },
+            }
+        except json.JSONDecodeError as e:
+            print(f"Error parsing config file: {e}")
+            self.config = {}
+
     def setup_directories(self):
         """Create necessary directories for data storage"""
         self.data_dir = Path("../data")
@@ -55,19 +89,27 @@ class FactoryLineGUI:
 
     def setup_styling(self):
         """Configure color scheme and styling"""
-        # Define color palette
+        # Company color palette - Strategic use for visibility and readability
         self.colors = {
-            "bg_dark": "#1e1e1e",
-            "bg_medium": "#2d2d2d",
-            "bg_light": "#3d3d3d",
-            "text_white": "#ffffff",
-            "text_gray": "#cccccc",
-            "accent_blue": "#0078d4",
-            "accent_green": "#107c10",
-            "accent_red": "#d13438",
-            "accent_orange": "#ff8c00",
-            "button_active": "#005a9e",
-            "button_hover": "#106ebe",
+            # Primary company colors - Used strategically for impact
+            "company_blue": "#0089c7",  # Blue NCS - Primary company color
+            "company_yellow": "#b1c501",  # Yellow green - Secondary company color
+            # Background hierarchy - Company blue main, neutral panels
+            "bg_main": "#0089c7",  # Company blue - main app background
+            "bg_panel": "#f8f9fa",  # Light gray - panel backgrounds for readability
+            "bg_white": "#ffffff",  # Pure white - content areas
+            # Text colors - Optimized for contrast
+            "text_white": "#ffffff",  # White - on company colored backgrounds
+            "text_dark": "#2c3e50",  # Dark gray - on light backgrounds
+            "text_company": "#0089c7",  # Company blue - accent text
+            # Button colors - Company colors on neutral backgrounds
+            "btn_collection": "#b1c501",  # Company yellow-green - collection mode
+            "btn_classification": "#0089c7",  # Company blue - classification mode
+            "btn_secondary": "#6c757d",  # Gray - secondary actions
+            "btn_danger": "#dc3545",  # Red - stop/danger actions
+            # Interactive states
+            "btn_hover": "#e9ecef",  # Light gray - hover background
+            "btn_active": "#495057",  # Dark gray - active state
         }
 
     def setup_gui(self):
@@ -75,9 +117,9 @@ class FactoryLineGUI:
         # Configure colors and styling
         self.setup_styling()
 
-        # Main container with dark background
-        self.root.configure(bg="#1e1e1e")
-        main_frame = tk.Frame(self.root, bg="#1e1e1e", padx=40, pady=30)
+        # Main container with company blue background
+        self.root.configure(bg=self.colors["bg_main"])
+        main_frame = tk.Frame(self.root, bg=self.colors["bg_main"], padx=40, pady=30)
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
         # Configure grid weights for responsive layout
@@ -90,18 +132,8 @@ class FactoryLineGUI:
         main_frame.rowconfigure(2, weight=1)
         main_frame.rowconfigure(3, weight=1)
 
-        # Title with enhanced styling
-        title_label = tk.Label(
-            main_frame,
-            text="FACTORY LINE QUALITY CONTROL",
-            font=("Arial", 32, "bold"),
-            bg="#1e1e1e",
-            fg="#ffffff",
-            pady=20,
-        )
-        title_label.grid(
-            row=0, column=0, columnspan=2, pady=(0, 40), sticky=(tk.W, tk.E)
-        )
+        # Title section with logo and text
+        self.setup_title_section(main_frame)
 
         # Status section
         self.setup_status_section(main_frame)
@@ -115,14 +147,66 @@ class FactoryLineGUI:
         # Exit button (hidden - Ctrl+Shift+Q to show)
         self.root.bind("<Control-Shift-Q>", self.show_exit_button)
 
+    def setup_title_section(self, parent):
+        """Setup title section with company logo and text"""
+        title_frame = tk.Frame(parent, bg=self.colors["bg_main"])
+        title_frame.grid(
+            row=0, column=0, columnspan=2, pady=(0, 40), sticky=(tk.W, tk.E)
+        )
+        title_frame.columnconfigure(0, weight=1)
+        title_frame.columnconfigure(1, weight=1)
+        title_frame.columnconfigure(2, weight=1)
+
+        try:
+            # Load and resize company logo
+            logo_path = Path("../logo-print-hd.jpg")
+            if logo_path.exists():
+                # Load image and resize for GUI
+                pil_image = Image.open(logo_path)
+                # Resize to appropriate height for title (keeping aspect ratio)
+                target_height = 80
+                aspect_ratio = pil_image.width / pil_image.height
+                target_width = int(target_height * aspect_ratio)
+                pil_image = pil_image.resize(
+                    (target_width, target_height), Image.Resampling.LANCZOS
+                )
+
+                # Convert to tkinter format
+                self.logo_image = ImageTk.PhotoImage(pil_image)
+
+                # Display logo on the left
+                logo_label = tk.Label(
+                    title_frame, image=self.logo_image, bg=self.colors["bg_main"]
+                )
+                logo_label.grid(row=0, column=0, sticky=tk.E, padx=(0, 20))
+
+        except Exception as e:
+            print(f"Could not load logo: {e}")
+            # If logo fails to load, we'll just show text
+
+        # Company title text in the center
+        title_label = tk.Label(
+            title_frame,
+            text="FACTORY LINE\nQUALITY CONTROL",
+            font=("Arial", 28, "bold"),
+            bg=self.colors["bg_main"],
+            fg=self.colors["text_white"],
+            justify=tk.CENTER,
+        )
+        title_label.grid(row=0, column=1, pady=20)
+
+        # Optional: Add some balance on the right (empty space or additional info)
+        spacer_label = tk.Label(title_frame, text="", bg=self.colors["bg_main"])
+        spacer_label.grid(row=0, column=2, sticky=tk.W)
+
     def setup_status_section(self, parent):
         """Setup status display section with enhanced styling"""
         status_frame = tk.LabelFrame(
             parent,
             text="SYSTEM STATUS",
             font=("Arial", 18, "bold"),
-            bg=self.colors["bg_medium"],
-            fg=self.colors["text_white"],
+            bg=self.colors["bg_panel"],
+            fg=self.colors["text_dark"],
             bd=2,
             relief="ridge",
             padx=20,
@@ -138,15 +222,15 @@ class FactoryLineGUI:
             status_frame,
             text="Current Mode:",
             font=("Arial", 16, "bold"),
-            bg=self.colors["bg_medium"],
-            fg=self.colors["text_gray"],
+            bg=self.colors["bg_panel"],
+            fg=self.colors["text_dark"],
         ).grid(row=0, column=0, sticky=tk.W, pady=10)
         self.mode_label = tk.Label(
             status_frame,
             text="STANDBY",
             font=("Arial", 16, "bold"),
-            bg=self.colors["bg_medium"],
-            fg=self.colors["accent_blue"],
+            bg=self.colors["bg_panel"],
+            fg=self.colors["text_company"],
         )
         self.mode_label.grid(row=0, column=1, sticky=tk.W, padx=(20, 0), pady=10)
 
@@ -155,15 +239,15 @@ class FactoryLineGUI:
             status_frame,
             text="System Time:",
             font=("Arial", 16, "bold"),
-            bg=self.colors["bg_medium"],
-            fg=self.colors["text_gray"],
+            bg=self.colors["bg_panel"],
+            fg=self.colors["text_dark"],
         ).grid(row=1, column=0, sticky=tk.W, pady=10)
         self.time_label = tk.Label(
             status_frame,
             text="",
             font=("Arial", 16),
-            bg=self.colors["bg_medium"],
-            fg=self.colors["text_white"],
+            bg=self.colors["bg_panel"],
+            fg=self.colors["text_dark"],
         )
         self.time_label.grid(row=1, column=1, sticky=tk.W, padx=(20, 0), pady=10)
 
@@ -172,15 +256,15 @@ class FactoryLineGUI:
             status_frame,
             text="IR Sensor:",
             font=("Arial", 16, "bold"),
-            bg=self.colors["bg_medium"],
-            fg=self.colors["text_gray"],
+            bg=self.colors["bg_panel"],
+            fg=self.colors["text_dark"],
         ).grid(row=2, column=0, sticky=tk.W, pady=10)
         self.sensor_label = tk.Label(
             status_frame,
             text="NOT CONNECTED",
             font=("Arial", 16, "bold"),
-            bg=self.colors["bg_medium"],
-            fg=self.colors["accent_red"],
+            bg=self.colors["bg_panel"],
+            fg=self.colors["btn_danger"],
         )
         self.sensor_label.grid(row=2, column=1, sticky=tk.W, padx=(20, 0), pady=10)
 
@@ -190,8 +274,8 @@ class FactoryLineGUI:
             parent,
             text="CONTROLS",
             font=("Arial", 18, "bold"),
-            bg=self.colors["bg_medium"],
-            fg=self.colors["text_white"],
+            bg=self.colors["bg_panel"],
+            fg=self.colors["text_dark"],
             bd=2,
             relief="ridge",
             padx=20,
@@ -203,15 +287,15 @@ class FactoryLineGUI:
         control_frame.columnconfigure(0, weight=1)
         control_frame.columnconfigure(1, weight=1)
 
-        # Large Collection mode button
+        # Large Collection mode button - Company yellow-green
         self.collect_button = tk.Button(
             control_frame,
             text="START\nCOLLECTION\nMODE",
             command=self.toggle_collection,
             font=("Arial", 16, "bold"),
-            bg=self.colors["accent_green"],
+            bg=self.colors["btn_collection"],
             fg=self.colors["text_white"],
-            activebackground=self.colors["button_active"],
+            activebackground=self.colors["btn_active"],
             activeforeground=self.colors["text_white"],
             relief="raised",
             bd=3,
@@ -220,15 +304,15 @@ class FactoryLineGUI:
         )
         self.collect_button.grid(row=0, column=0, padx=15, pady=15, sticky=(tk.W, tk.E))
 
-        # Large Classification mode button
+        # Large Classification mode button - Company blue
         self.classify_button = tk.Button(
             control_frame,
             text="START\nCLASSIFICATION\nMODE",
             command=self.toggle_classification,
             font=("Arial", 16, "bold"),
-            bg=self.colors["accent_blue"],
+            bg=self.colors["btn_classification"],
             fg=self.colors["text_white"],
-            activebackground=self.colors["button_active"],
+            activebackground=self.colors["btn_active"],
             activeforeground=self.colors["text_white"],
             relief="raised",
             bd=3,
@@ -239,15 +323,15 @@ class FactoryLineGUI:
             row=0, column=1, padx=15, pady=15, sticky=(tk.W, tk.E)
         )
 
-        # Export data button
+        # Export data button - Secondary gray
         export_button = tk.Button(
             control_frame,
             text="EXPORT\nDATA",
             command=self.export_data,
             font=("Arial", 14, "bold"),
-            bg=self.colors["accent_orange"],
+            bg=self.colors["btn_secondary"],
             fg=self.colors["text_white"],
-            activebackground=self.colors["button_active"],
+            activebackground=self.colors["btn_active"],
             activeforeground=self.colors["text_white"],
             relief="raised",
             bd=2,
@@ -256,16 +340,16 @@ class FactoryLineGUI:
         )
         export_button.grid(row=1, column=0, padx=15, pady=(0, 15), sticky=(tk.W, tk.E))
 
-        # Settings button
+        # Settings button - Dark background with white text
         settings_button = tk.Button(
             control_frame,
             text="SETTINGS",
             command=self.open_settings,
             font=("Arial", 14, "bold"),
-            bg=self.colors["bg_light"],
+            bg=self.colors["btn_active"],
             fg=self.colors["text_white"],
-            activebackground=self.colors["button_active"],
-            activeforeground=self.colors["text_white"],
+            activebackground=self.colors["btn_hover"],
+            activeforeground=self.colors["text_dark"],
             relief="raised",
             bd=2,
             height=3,
@@ -281,8 +365,8 @@ class FactoryLineGUI:
             parent,
             text="STATISTICS",
             font=("Arial", 18, "bold"),
-            bg=self.colors["bg_medium"],
-            fg=self.colors["text_white"],
+            bg=self.colors["bg_panel"],
+            fg=self.colors["text_dark"],
             bd=2,
             relief="ridge",
             padx=20,
@@ -297,15 +381,15 @@ class FactoryLineGUI:
             stats_frame,
             text="Images Collected:",
             font=("Arial", 16, "bold"),
-            bg=self.colors["bg_medium"],
-            fg=self.colors["text_gray"],
+            bg=self.colors["bg_panel"],
+            fg=self.colors["text_dark"],
         ).grid(row=0, column=0, sticky=tk.W, pady=15)
         self.images_count_label = tk.Label(
             stats_frame,
             text="0",
             font=("Arial", 20, "bold"),
-            bg=self.colors["bg_medium"],
-            fg=self.colors["accent_green"],
+            bg=self.colors["bg_panel"],
+            fg=self.colors["btn_collection"],
         )
         self.images_count_label.grid(
             row=0, column=1, sticky=tk.W, padx=(20, 40), pady=15
@@ -316,15 +400,15 @@ class FactoryLineGUI:
             stats_frame,
             text="Classifications Made:",
             font=("Arial", 16, "bold"),
-            bg=self.colors["bg_medium"],
-            fg=self.colors["text_gray"],
+            bg=self.colors["bg_panel"],
+            fg=self.colors["text_dark"],
         ).grid(row=0, column=2, sticky=tk.W, pady=15)
         self.classifications_count_label = tk.Label(
             stats_frame,
             text="0",
             font=("Arial", 20, "bold"),
-            bg=self.colors["bg_medium"],
-            fg=self.colors["accent_blue"],
+            bg=self.colors["bg_panel"],
+            fg=self.colors["btn_classification"],
         )
         self.classifications_count_label.grid(
             row=0, column=3, sticky=tk.W, padx=(20, 0), pady=15
@@ -335,15 +419,15 @@ class FactoryLineGUI:
             stats_frame,
             text="Session Started:",
             font=("Arial", 16, "bold"),
-            bg=self.colors["bg_medium"],
-            fg=self.colors["text_gray"],
+            bg=self.colors["bg_panel"],
+            fg=self.colors["text_dark"],
         ).grid(row=1, column=0, sticky=tk.W, pady=(0, 15))
         self.session_start_label = tk.Label(
             stats_frame,
             text=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             font=("Arial", 14),
-            bg=self.colors["bg_medium"],
-            fg=self.colors["text_white"],
+            bg=self.colors["bg_panel"],
+            fg=self.colors["text_dark"],
         )
         self.session_start_label.grid(
             row=1, column=1, columnspan=3, sticky=tk.W, padx=(20, 0), pady=(0, 15)
@@ -364,9 +448,11 @@ class FactoryLineGUI:
 
         self.is_collecting = True
         self.collect_button.config(
-            text="STOP\nCOLLECTION", bg=self.colors["accent_red"]
+            text="STOP\nCOLLECTION", bg=self.colors["btn_danger"]
         )
-        self.mode_label.config(text="COLLECTING IMAGES", fg=self.colors["accent_green"])
+        self.mode_label.config(
+            text="COLLECTING IMAGES", fg=self.colors["btn_collection"]
+        )
 
         # Start collection thread
         self.collection_thread = threading.Thread(
@@ -378,9 +464,9 @@ class FactoryLineGUI:
         """Stop image collection mode"""
         self.is_collecting = False
         self.collect_button.config(
-            text="START\nCOLLECTION\nMODE", bg=self.colors["accent_green"]
+            text="START\nCOLLECTION\nMODE", bg=self.colors["btn_collection"]
         )
-        self.mode_label.config(text="STANDBY", fg=self.colors["accent_blue"])
+        self.mode_label.config(text="STANDBY", fg=self.colors["text_company"])
 
     def toggle_classification(self):
         """Toggle classification mode on/off"""
@@ -400,16 +486,16 @@ class FactoryLineGUI:
         if not model_path.exists():
             messagebox.showerror(
                 "Error",
-                "No trained model found!\n\nPlease:\n1. Collect images\n2. Train model using Liner.ai\n3. Place model.tflite in models/pretrained/",
+                "No trained model found!\n\nPlease:\n1. Collect images (224x224 for Google Teachable Machine)\n2. Train model using Google Teachable Machine\n3. Download TensorFlow Lite model\n4. Place model.tflite in models/pretrained/",
             )
             return
 
         self.is_classifying = True
         self.classify_button.config(
-            text="STOP\nCLASSIFICATION", bg=self.colors["accent_red"]
+            text="STOP\nCLASSIFICATION", bg=self.colors["btn_danger"]
         )
         self.mode_label.config(
-            text="CLASSIFYING IMAGES", fg=self.colors["accent_orange"]
+            text="CLASSIFYING IMAGES", fg=self.colors["btn_classification"]
         )
 
         # Start classification thread
@@ -422,9 +508,9 @@ class FactoryLineGUI:
         """Stop image classification mode"""
         self.is_classifying = False
         self.classify_button.config(
-            text="START\nCLASSIFICATION\nMODE", bg=self.colors["accent_blue"]
+            text="START\nCLASSIFICATION\nMODE", bg=self.colors["btn_classification"]
         )
-        self.mode_label.config(text="STANDBY", fg=self.colors["accent_blue"])
+        self.mode_label.config(text="STANDBY", fg=self.colors["text_company"])
 
     def collection_loop(self):
         """Main collection loop - runs in separate thread"""
@@ -434,7 +520,7 @@ class FactoryLineGUI:
             time.sleep(2)  # Simulate 2-second interval for testing
 
             if self.is_collecting:  # Check again in case it was stopped
-                # TODO: Capture image with camera
+                # TODO: Capture image with camera (224x224 for Google Teachable Machine)
                 self.simulate_image_capture()
 
     def classification_loop(self):
@@ -445,8 +531,18 @@ class FactoryLineGUI:
             time.sleep(3)  # Simulate 3-second interval for testing
 
             if self.is_classifying:  # Check again in case it was stopped
-                # TODO: Capture and classify image
+                # TODO: Capture and classify image (224x224 for Google Teachable Machine)
                 self.simulate_classification()
+
+    def simulate_image_capture(self):
+        """Simulate capturing an image (placeholder for real camera)"""
+        self.image_count += 1
+        print(f"Image captured: {self.image_count}")
+
+    def simulate_classification(self):
+        """Simulate classifying an image (placeholder for real classifier)"""
+        self.classification_count += 1
+        print(f"Image classified: {self.classification_count}")
 
     def simulate_image_capture(self):
         """Simulate capturing an image (placeholder for real camera)"""

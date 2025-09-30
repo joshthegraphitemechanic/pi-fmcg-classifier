@@ -1,0 +1,29 @@
+{
+    "camera": {
+        "image_width": 224,
+        "image_height": 224,
+        "capture_format": "RGB",
+        "quality": 95
+    },
+    "collection": {
+        "auto_capture_interval": 2.0,
+        "images_per_session": 100,
+        "save_original": true,
+        "save_processed": true
+    },
+    "classification": {
+        "model_path": "../models/pretrained/model.tflite",
+        "confidence_threshold": 0.7,
+        "classification_interval": 1.0
+    },
+    "paths": {
+        "captured_images": "../data/captured_images",
+        "classification_results": "../data/classification_results",
+        "models": "../models/pretrained"
+    },
+    "sensors": {
+        "ir_sensor_pin": 18,
+        "distance_threshold_cm": 15,
+        "trigger_delay_ms": 500
+    }
+}
