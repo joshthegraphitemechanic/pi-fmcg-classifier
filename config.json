@@ -6,24 +6,26 @@
         "quality": 95
     },
     "collection": {
-        "auto_capture_interval": 2.0,
-        "images_per_session": 100,
-        "save_original": true,
-        "save_processed": true
+        "trigger_mode": "sensor",
+        "stop_condition": "manual_or_storage_limit",
+        "storage_limit_threshold_percent": 90,
+        "organization": "sequential"
     },
     "classification": {
         "model_path": "../models/pretrained/model.tflite",
-        "confidence_threshold": 0.7,
-        "classification_interval": 1.0
+        "confidence_threshold": 0.8,
+        "save_results_csv": true,
+        "organize_by_category": true
     },
     "paths": {
         "captured_images": "../data/captured_images",
         "classification_results": "../data/classification_results",
-        "models": "../models/pretrained"
+        "models": "../models/pretrained",
+        "results_csv": "../data/classification_results/results.csv"
     },
     "sensors": {
         "ir_sensor_pin": 18,
-        "distance_threshold_cm": 15,
+        "voltage_threshold": 2.5,
         "trigger_delay_ms": 500
     }
 }
