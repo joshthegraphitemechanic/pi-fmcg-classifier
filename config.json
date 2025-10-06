@@ -7,6 +7,8 @@
     },
     "collection": {
         "trigger_mode": "sensor",
+        "auto_capture_interval": 2.0,
+        "images_per_session": 100,
         "stop_condition": "manual_or_storage_limit",
         "storage_limit_threshold_percent": 90,
         "organization": "sequential"
@@ -14,14 +16,80 @@
     "classification": {
         "model_path": "../models/pretrained/model.tflite",
         "confidence_threshold": 0.8,
+        "auto_classify_interval": 3.0,
         "save_results_csv": true,
         "organize_by_category": true
+    },
+    "ui": {
+        "font_family": "Segoe UI",
+        "base_screen": {
+            "width": 1920,
+            "height": 1080
+        },
+        "font_sizes": {
+            "title": {
+                "base": 32,
+                "minimum": 20
+            },
+            "button_main": {
+                "base": 28,
+                "minimum": 18
+            },
+            "button_secondary": {
+                "base": 20,
+                "minimum": 16
+            },
+            "label_large": {
+                "base": 22,
+                "minimum": 14
+            },
+            "label_medium": {
+                "base": 18,
+                "minimum": 12
+            },
+            "label_small": {
+                "base": 16,
+                "minimum": 10
+            }
+        },
+        "window_sizing": {
+            "fullscreen_threshold_width": 1200,
+            "development_scale": 0.8,
+            "minimum_width": 800,
+            "minimum_height": 600
+        },
+        "colors": {
+            "primary": "#325d88",
+            "secondary": "#8e8c84",
+            "success": "#93c54b",
+            "info": "#29abe0",
+            "warning": "#f47c3c",
+            "danger": "#d9534f",
+            "bg_main": "#325d88",
+            "bg_panel": "#f8f5f0",
+            "bg_white": "#ffffff",
+            "bg_dark": "#3e3f3a",
+            "text_white": "#ffffff",
+            "text_dark": "#3e3f3a",
+            "text_main": "#3e3f3a",
+            "text_primary": "#325d88",
+            "btn_collection": "#93c54b",
+            "btn_classification": "#29abe0",
+            "btn_secondary": "#8e8c84",
+            "btn_danger": "#d9534f",
+            "btn_warning": "#f47c3c",
+            "btn_primary": "#325d88",
+            "btn_primary_dark": "#1e3a52",
+            "btn_hover": "#f8f9fa",
+            "btn_active": "#495057"
+        }
     },
     "paths": {
         "captured_images": "../data/captured_images",
         "classification_results": "../data/classification_results",
         "models": "../models/pretrained",
-        "results_csv": "../data/classification_results/results.csv"
+        "results_csv": "../data/classification_results/results.csv",
+        "logo": "../logo-print-hd.jpg"
     },
     "sensors": {
         "ir_sensor_pin": 18,
